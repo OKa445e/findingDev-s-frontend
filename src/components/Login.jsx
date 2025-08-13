@@ -3,31 +3,37 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { addUsers } from "../utils/userSlice";
-import {BASE_URL} from "../utils/constant";
+import { BASE_URL } from "../utils/constant";
 
 const Login = () => {
   const [emailId, setEmailId] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault?.();
     try {
-      const res = await axios.post(BASE_URL + "/login", {
-        emailId,
-        password,
-      },{
-        withCredentials: true,
-      });
+      const res = await axios.post(
+        BASE_URL + "/login",
+        {
+          emailId,
+          password,
+        },
+        {
+          withCredentials: true,
+        }
+      );
       dispatch(addUsers(res.data));
       navigate("/");
     } catch (err) {
-      console.log(err);
+      setError(err.response?.data || "Something went wrong");
     }
   };
+
   return (
-    <main className="flex-grow flex items-center justify-center pt-16 pb-16">
+    <div className="flex-grow flex items-center justify-center pt-16 pb-16">
       <div className="w-full max-w-md mx-auto p-4">
         <div className="bg-base-300 border border-gray-700 rounded-2xl shadow-2xl p-8">
           <h2 className="text-center text-3xl font-bold text-gray-100 mb-2">
@@ -37,7 +43,7 @@ const Login = () => {
             Log in to connect with developers.
           </p>
 
-          <form action="#" method="POST" className="space-y-6"  onSubmit={handleSubmit}>
+          <div className="space-y-6">
             {/* Email Input */}
             <div>
               <label
@@ -86,17 +92,20 @@ const Login = () => {
               </div>
             </div>
 
+            {/* Error Message */}
+            <p className="text-red-500">{error}</p>
+
             {/* Submit Button */}
             <div>
               <button
-                type="submit"
+                type="button"
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 transition duration-200"
-              
+                onClick={handleSubmit}
               >
                 Log In
               </button>
             </div>
-          </form>
+          </div>
 
           {/* Sign Up Link */}
           <p className="mt-8 text-center text-sm text-gray-400">
@@ -110,7 +119,7 @@ const Login = () => {
           </p>
         </div>
       </div>
-    </main>
+    </div>
   );
 };
 
