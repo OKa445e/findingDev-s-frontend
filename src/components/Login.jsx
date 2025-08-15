@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { addUsers } from "../utils/userSlice";
 import { BASE_URL } from "../utils/constant";
@@ -8,33 +8,28 @@ import { BASE_URL } from "../utils/constant";
 const Login = () => {
   const [emailId, setEmailId] = useState("");
   const [password, setPassword] = useState("");
+
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault?.();
+  const handleSubmit = async () => {
     try {
       const res = await axios.post(
-        BASE_URL + "/login",
-        {
-          emailId,
-          password,
-        },
-        {
-          withCredentials: true,
-        }
+        `${BASE_URL}/auth/login`,
+        { emailId, password },
+        { withCredentials: true }
       );
       dispatch(addUsers(res.data));
-      navigate("/");
+      navigate("/feed");
     } catch (err) {
       setError(err.response?.data || "Something went wrong");
     }
   };
 
   return (
-    <div className="flex-grow flex items-center justify-center pt-16 pb-16">
-      <div className="w-full max-w-md mx-auto p-4">
+    <div className="flex-grow flex items-center justify-center pt-16 pb-16 mb-4">
+      <div className="w-full max-w-md p-4">
         <div className="bg-base-300 border border-gray-700 rounded-2xl shadow-2xl p-8">
           <h2 className="text-center text-3xl font-bold text-gray-100 mb-2">
             Welcome Back!
@@ -44,78 +39,72 @@ const Login = () => {
           </p>
 
           <div className="space-y-6">
-            {/* Email Input */}
+            {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="text-sm font-medium text-gray-300"
-              >
+              <label className="text-sm font-medium text-gray-300">
                 Email Address
               </label>
-              <div className="mt-2">
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  onChange={(e) => setEmailId(e.target.value)}
-                />
-              </div>
+              <input
+                type="email"
+                value={emailId}
+                onChange={(e) => setEmailId(e.target.value)}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
+              />
             </div>
 
-            {/* Password Input */}
+            {/* Password */}
             <div>
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="text-sm font-medium text-gray-300"
-                >
-                  Password
-                </label>
-                <div className="text-sm">
-                  <a
-                    href="#"
-                    className="font-semibold text-blue-500 hover:text-blue-400 transition duration-200"
-                  >
-                    Forgot password?
-                  </a>
-                </div>
-              </div>
-              <div className="mt-2">
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
+              <label className="text-sm font-medium text-gray-300">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
+              />
             </div>
 
-            {/* Error Message */}
-            <p className="text-red-500">{error}</p>
+            {/* Error */}
+            {error && <p className="text-red-500">{error}</p>}
 
-            {/* Submit Button */}
-            <div>
-              <button
-                type="button"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500 transition duration-200"
-                onClick={handleSubmit}
-              >
-                Log In
-              </button>
+            {/* Email Login Button */}
+            <button
+              className="w-full py-3 bg-blue-600 rounded-lg text-white font-semibold"
+              onClick={handleSubmit}
+            >
+              Log In
+            </button>
+
+            {/* OR Divider */}
+            <div className="flex items-center my-4">
+              <hr className="flex-grow border-gray-600" />
+              <span className="mx-2 text-gray-400">OR</span>
+              <hr className="flex-grow border-gray-600" />
             </div>
+
+            {/* Google Login */}
+            <a
+              href={BASE_URL + "/auth/google"}
+              className="w-full flex items-center justify-center py-3 px-4 border border-gray-600 rounded-lg text-white bg-red-500 hover:bg-red-600"
+            >
+              <img
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt="Google logo"
+                className="w-5 h-5 mr-2"
+              />
+              Continue with Google
+            </a>
           </div>
 
-          {/* Sign Up Link */}
           <p className="mt-8 text-center text-sm text-gray-400">
             Not a member yet?{" "}
-            <a
-              href="#"
-              className="font-semibold text-blue-500 hover:text-blue-400 transition duration-200"
+            <Link
+              to="/signup"
+              className="font-semibold text-blue-500 hover:text-blue-400"
             >
               Sign up now
-            </a>
+            </Link>
           </p>
         </div>
       </div>

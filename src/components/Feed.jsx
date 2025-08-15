@@ -6,15 +6,15 @@ import { addFeed } from "../utils/feedSlice";
 import UserCard from "./UserCard";
 
 const Feed = () => {
-  const dispatch = useDispatch();
   const feed = useSelector((store) => store.feed);
+  const dispatch = useDispatch();
+
   const userFeed = async () => {
     if (feed) return;
     try {
       const res = await axios.get(BASE_URL + "/user/feed", {
         withCredentials: true,
       });
-      console.log(res.data);
 
       dispatch(addFeed(res?.data));
     } catch (error) {
@@ -25,12 +25,14 @@ const Feed = () => {
   useEffect(() => {
     userFeed();
   }, []);
+
+  if (!feed) return null;
+  if (feed.length === 0)
+    return <p className="text-center my-20 text-gray-400">No new Users found.</p>;
   return (
-   feed && (
     <div className="flex justify-center my-10">
-    <UserCard user = {feed?.data[0]}/>
-   </div>
-   )
+      <UserCard user={feed[0]} />
+    </div>
   );
 };
 

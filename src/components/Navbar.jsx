@@ -12,7 +12,7 @@ const Navbar = () => {
   const handleClick = async () => {
     try {
       await axios.post(
-        BASE_URL + "/logout",
+        BASE_URL + "/auth/logout",
         {},
         {
           withCredentials: true,
@@ -68,7 +68,13 @@ const Navbar = () => {
                   <Link to="/profile">Profile</Link>
                 </li>
                 <li>
-                  <Link to="/connects">Connection's</Link>
+                  <Link to="/connects">Connections</Link>
+                </li>
+                 <li>
+                  <Link to="/feed">Feeds</Link>
+                </li>
+                  <li>
+                  <Link to="/requests">Requests</Link>
                 </li>
                 <li>
                   {/* Using the theme's error color for logout provides a visual cue. */}

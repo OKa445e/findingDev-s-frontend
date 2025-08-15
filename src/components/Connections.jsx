@@ -55,8 +55,23 @@ const Connections = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {filteredConnections.map((connection) => {
-            const { _id, name, about, gender, age, photoUrl, skills } =
+            const { _id, name, about, gender, age, photoUrl, skills: rawSkills } =
               connection;
+            
+            // Normalize skills to always be an array
+            const skills = (() => {
+              if (!rawSkills) return [];
+              if (Array.isArray(rawSkills)) return rawSkills;
+              if (typeof rawSkills === 'string') {
+                try {
+                  const parsed = JSON.parse(rawSkills);
+                  return Array.isArray(parsed) ? parsed : [rawSkills];
+                } catch {
+                  return [rawSkills];
+                }
+              }
+              return [String(rawSkills)];
+            })();
 
             return (
               <div

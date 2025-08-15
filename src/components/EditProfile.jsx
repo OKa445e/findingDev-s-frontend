@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import UserCard from "./UserCard";
 import { BASE_URL } from "../utils/constant";
 import { useDispatch } from "react-redux";
@@ -9,6 +9,112 @@ import Loader from "./Loader";
 const EditProfile = ({ user }) => {
   const dispatch = useDispatch();
 
+  // Safely extract values
+  const name = user?.name || "";
+  const photoUrl = user?.photoUrl || "";
+  const age = user?.age || "";
+  const about = user?.about || "";
+  const gender = user?.gender || "";
+  
+  // Normalize skills to always be an array
+  const skills = (() => {
+    const rawSkills = user?.skills;
+    if (!rawSkills) return [];
+    if (Array.isArray(rawSkills)) return rawSkills;
+    if (typeof rawSkills === 'string') {
+      try {
+        const parsed = JSON.parse(rawSkills);
+        return Array.isArray(parsed) ? parsed : [rawSkills];
+      } catch {
+        return [rawSkills];
+      }
+    }
+    return [String(rawSkills)];
+  })();
+
+  // Always call hooks (same order every render)
+  const [nameEdit, setNameEdit] = useState(name);
+  const [photoUrlEdit, setPhotoUrlEdit] = useState(photoUrl);
+  const [ageEdit, setAgeEdit] = useState(age);
+  const [aboutEdit, setAboutEdit] = useState(about);
+  const [genderEdit, setGenderEdit] = useState(gender);
+  const [skillsEdit, setSkillsEdit] = useState(skills);
+  const [skillsInput, setSkillsInput] = useState(skills.join(", "));
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(photoUrl);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [showToast, setShowToast] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setNameEdit(user.name || "");
+      setPhotoUrlEdit(user.photoUrl || "");
+      setPreviewUrl(user.photoUrl || "");
+      setAgeEdit(user.age || "");
+      setAboutEdit(user.about || "");
+      setGenderEdit(user.gender || "");
+      // Normalize skills for the edit form
+      const normalizedSkills = (() => {
+        const rawSkills = user?.skills;
+        if (!rawSkills) return [];
+        if (Array.isArray(rawSkills)) return rawSkills;
+        if (typeof rawSkills === 'string') {
+          try {
+            const parsed = JSON.parse(rawSkills);
+            return Array.isArray(parsed) ? parsed : [rawSkills];
+          } catch {
+            return [rawSkills];
+          }
+        }
+        return [String(rawSkills)];
+      })();
+      
+      setSkillsEdit(normalizedSkills);
+      setSkillsInput(normalizedSkills.join(", "));
+    }
+  }, [user]);
+
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/jpg", "image/png"];
+      if (!validTypes.includes(file.type)) {
+        setError("Please select a valid image file (JPEG, JPG, or PNG)");
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError("File size should be less than 5MB");
+        return;
+      }
+
+      setSelectedFile(file);
+      setError("");
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle skills input change
+  const handleSkillsChange = (e) => {
+    const value = e.target.value;
+    setSkillsInput(value);
+    const arr = value
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    setSkillsEdit(arr);
+  };
+
   if (!user) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -17,42 +123,46 @@ const EditProfile = ({ user }) => {
     );
   }
 
-  const { name = "", photoUrl = "", age = "", about = "", gender = "" } = user;
-
-  const [nameEdit, setNameEdit] = useState(name);
-  const [photoUrlEdit, setPhotoUrlEdit] = useState(photoUrl);
-  const [ageEdit, setAgeEdit] = useState(age);
-  const [aboutEdit, setAboutEdit] = useState(about);
-  const [genderEdit, setGenderEdit] = useState(gender);
-  const [error, setError] = useState("");
-  const [showToast, setShowToast] = useState(false);
-
   const handleSubmit = async () => {
-    if (!nameEdit || !photoUrlEdit || !ageEdit || !aboutEdit || !genderEdit) {
-      setError("All fields are required.");
+    if (!nameEdit || !ageEdit || !aboutEdit || !genderEdit) {
+      setError("Name, Age, About, and Gender are required.");
       return;
     }
     setError("");
+    setIsUploading(true);
 
     try {
-      const res = await axios.patch(
-        BASE_URL + "/profile/edit",
-        {
-          name: nameEdit,
-          photoUrl: photoUrlEdit,
-          age: ageEdit,
-          about: aboutEdit,
-          gender: genderEdit,
+      const formData = new FormData();
+      formData.append("name", nameEdit);
+      formData.append("age", ageEdit);
+      formData.append("about", aboutEdit);
+      formData.append("gender", genderEdit);
+      // Save skills as individual strings, not as JSON array
+      skillsEdit.forEach((skill, index) => {
+        formData.append(`skills[${index}]`, skill);
+      });
+
+      // Add file if selected, otherwise keep existing photo URL
+      if (selectedFile) {
+        formData.append("photo", selectedFile);
+      }
+
+      const res = await axios.patch(BASE_URL + "/profile/edit", formData, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-        { withCredentials: true }
-      );
+      });
 
       dispatch(addUsers(res?.data?.data));
       setShowToast(true);
+      setSelectedFile(null); // Reset file selection
 
       setTimeout(() => setShowToast(false), 2000);
     } catch (err) {
       setError(err?.response?.data || "Something went wrong");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -92,21 +202,6 @@ const EditProfile = ({ user }) => {
               />
             </div>
 
-            {/* Photo URL Input */}
-            <div>
-              <label className="text-sm font-medium text-gray-300">
-                Photo URL
-              </label>
-              <input
-                type="text"
-                required
-                value={photoUrlEdit}
-                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white 
-                focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={(e) => setPhotoUrlEdit(e.target.value)}
-              />
-            </div>
-
             {/* About Input */}
             <div>
               <label className="text-sm font-medium text-gray-300">About</label>
@@ -138,17 +233,60 @@ const EditProfile = ({ user }) => {
               </select>
             </div>
 
+            {/* Skills Input */}
+            <div>
+              <label className="text-sm font-medium text-gray-300">
+                Skills
+              </label>
+              <input
+                type="text"
+                value={skillsInput}
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white 
+                  focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={handleSkillsChange}
+                placeholder="e.g. JavaScript, React, Node.js"
+              />
+            </div>
+
+            {/* Photo Upload */}
+            <div>
+              <label className="text-sm font-medium text-gray-300">
+                Profile Photo
+              </label>
+              <div className="mt-2">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png"
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white 
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 file:mr-4 file:py-2 
+                  file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold 
+                  file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  onChange={handleFileChange}
+                />
+              </div>
+              {selectedFile && (
+                <p className="text-sm text-gray-400 mt-1">
+                  Selected: {selectedFile.name}
+                </p>
+              )}
+            </div>
+
             {/* Error Message */}
             <p className="text-red-500">{error}</p>
 
             {/* Save Button */}
             <button
               type="button"
-              className="w-full py-3 rounded-lg font-semibold text-white bg-blue-600 
-              hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
+              disabled={isUploading}
+              className={`w-full py-3 rounded-lg font-semibold text-white 
+              ${
+                isUploading
+                  ? "bg-gray-500 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500"
+              }`}
               onClick={handleSubmit}
             >
-              Save Profile
+              {isUploading ? "Saving..." : "Save Profile"}
             </button>
           </div>
         </div>
@@ -158,10 +296,11 @@ const EditProfile = ({ user }) => {
           <UserCard
             user={{
               name: nameEdit,
-              photoUrl: photoUrlEdit,
+              photoUrl: previewUrl, // Use preview URL for live preview
               age: ageEdit,
               about: aboutEdit,
               gender: genderEdit,
+              skills: skillsEdit,
             }}
             isEditProfile={true}
           />
