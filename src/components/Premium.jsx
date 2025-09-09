@@ -2,8 +2,25 @@ import { CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { BASE_URL } from "../utils/constant";
+import { useEffect } from "react";
 
 const Premium = () => {
+  const [isUserPremium, setIsPremium] = useState(false);
+
+  useEffect(() => {
+    paymnetVerification();
+  }, []);
+
+  const paymnetVerification = async () => {
+    const res = await axios.get(BASE_URL + "/premium/verify", {
+      withCredentials: true,
+    });
+
+    if (res.data.isPremium) {
+      setIsPremium(true);
+    }
+  };
+
   const handleBuyClick = async (type) => {
     const { data } = await axios.post(
       BASE_URL + "/payment/create",
@@ -65,7 +82,9 @@ const Premium = () => {
     const styles = plan.highlight
       ? "bg-gray-900 border border-yellow-500"
       : "bg-gray-800 border border-gray-600";
-    const buttonStyle = plan.highlight ? "btn-primary" : "btn-outline btn-secondary";
+    const buttonStyle = plan.highlight
+      ? "btn-primary"
+      : "btn-outline btn-secondary";
 
     return (
       <motion.div
@@ -103,18 +122,31 @@ const Premium = () => {
     );
   };
 
-  return (
-    <div className="flex flex-col items-center p-10 bg-[#0f172a] min-h-[90vh] text-white">
-      <h1 className="text-4xl font-extrabold mb-4">Upgrade to Premium</h1>
-      <p className="text-gray-400 mb-12 text-lg text-center max-w-2xl"></p>
-
-      <div className="grid md:grid-cols-2 gap-10 w-full max-w-5xl">
-        {plans.map((plan, idx) => (
-          <PlanCard key={idx} plan={plan} idx={idx} />
-        ))}
+return (
+  <div className="flex flex-col items-center p-10 bg-[#0f172a] min-h-[90vh] text-white">
+    {isUserPremium ? (
+      <div className="flex flex-col items-center justify-center flex-1">
+        <CheckCircle className="text-green-400 w-12 h-12 mb-4" />
+        <h1 className="text-3xl font-extrabold mb-2">You are already a Premium User 🎉</h1>
+        <p className="text-gray-400 text-lg">Enjoy all premium features of Finding Dev!</p>
       </div>
-    </div>
-  );
+    ) : (
+      <>
+        <h1 className="text-4xl font-extrabold mb-4">Upgrade to Premium</h1>
+        <p className="text-gray-400 mb-12 text-lg text-center max-w-2xl">
+          Unlock exclusive features and connect better with developers worldwide.
+        </p>
+
+        <div className="grid md:grid-cols-2 gap-10 w-full max-w-5xl">
+          {plans.map((plan, idx) => (
+            <PlanCard key={idx} plan={plan} idx={idx} />
+          ))}
+        </div>
+      </>
+    )}
+  </div>
+);
+
 };
 
 export default Premium;
