@@ -76,6 +76,9 @@ const Navbar = () => {
                   <li>
                   <Link to="/requests">Requests</Link>
                 </li>
+                  <li>
+                  <Link to="/premium">Premium Member</Link>
+                </li>
                 <li>
                   {/* Using the theme's error color for logout provides a visual cue. */}
                   <a className="text-error font-semibold" onClick={handleClick}>
