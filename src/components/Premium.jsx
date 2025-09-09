@@ -2,7 +2,7 @@ import { CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { BASE_URL } from "../utils/constant";
-import { useEffect } from "react";
+import { useState,useEffect } from "react";
 
 const Premium = () => {
   const [isUserPremium, setIsPremium] = useState(false);
