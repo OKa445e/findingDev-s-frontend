@@ -2,22 +2,29 @@ import { CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { BASE_URL } from "../utils/constant";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 
 const Premium = () => {
   const [isUserPremium, setIsPremium] = useState(false);
+  const [loading, setLoading] = useState(true); // 👈 new state for loading
 
   useEffect(() => {
     paymnetVerification();
   }, []);
 
   const paymnetVerification = async () => {
-    const res = await axios.get(BASE_URL + "/premium/verify", {
-      withCredentials: true,
-    });
+    try {
+      const res = await axios.get(BASE_URL + "/premium/verify", {
+        withCredentials: true,
+      });
 
-    if (res.data.isPremium) {
-      setIsPremium(true);
+      if (res.data.isPremium) {
+        setIsPremium(true);
+      }
+    } catch (err) {
+      console.error("Verification failed", err);
+    } finally {
+      setLoading(false); // 👈 stop loading after API call
     }
   };
 
@@ -122,31 +129,45 @@ const Premium = () => {
     );
   };
 
-return (
-  <div className="flex flex-col items-center p-10 bg-[#0f172a] min-h-[90vh] text-white">
-    {isUserPremium ? (
-      <div className="flex flex-col items-center justify-center flex-1">
-        <CheckCircle className="text-green-400 w-12 h-12 mb-4" />
-        <h1 className="text-3xl font-extrabold mb-2">You are already a Premium User 🎉</h1>
-        <p className="text-gray-400 text-lg">Enjoy all premium features of Finding Dev!</p>
-      </div>
-    ) : (
-      <>
-        <h1 className="text-4xl font-extrabold mb-4">Upgrade to Premium</h1>
-        <p className="text-gray-400 mb-12 text-lg text-center max-w-2xl">
-          Unlock exclusive features and connect better with developers worldwide.
+  // ⬇️ Handle loading
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[90vh] bg-[#0f172a] text-white">
+        <p className="text-lg text-gray-400 animate-pulse">
+          Checking your premium status...
         </p>
+      </div>
+    );
+  }
 
-        <div className="grid md:grid-cols-2 gap-10 w-full max-w-5xl">
-          {plans.map((plan, idx) => (
-            <PlanCard key={idx} plan={plan} idx={idx} />
-          ))}
+  return (
+    <div className="flex flex-col items-center p-10 bg-[#0f172a] min-h-[90vh] text-white">
+      {isUserPremium ? (
+        <div className="flex flex-col items-center justify-center flex-1">
+          <CheckCircle className="text-green-400 w-12 h-12 mb-4" />
+          <h1 className="text-3xl font-extrabold mb-2">
+            You are already a Premium User 🎉
+          </h1>
+          <p className="text-gray-400 text-lg">
+            Enjoy all premium features of Finding Dev!
+          </p>
         </div>
-      </>
-    )}
-  </div>
-);
+      ) : (
+        <>
+          <h1 className="text-4xl font-extrabold mb-4">Upgrade to Premium</h1>
+          <p className="text-gray-400 mb-12 text-lg text-center max-w-2xl">
+            Unlock exclusive features and connect better with developers worldwide.
+          </p>
 
+          <div className="grid md:grid-cols-2 gap-10 w-full max-w-5xl">
+            {plans.map((plan, idx) => (
+              <PlanCard key={idx} plan={plan} idx={idx} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 };
 
 export default Premium;
